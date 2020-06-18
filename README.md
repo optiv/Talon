@@ -1,10 +1,10 @@
 
 # Talon
-Talon is a tool designed to preform automated password guessing attacks while remaining undetected by network detection tools. Talon can enumerate a list of users to identify which users are valid, using Kerberos. Talon can also perform a password guessing attack against the Kerberos and LDAPS (LDAP Secure) services. Talon can either use a single domain controller or multiple ones to perform these attacks, randomizing each attempt, between the domain controllers and services (LDAP or Kerberos).
+Talon is a tool designed to perform automated password guessing attacks while remaining undetected. Talon can enumerate a list of users to identify which users are valid, using Kerberos. Talon can also perform a password guessing attack against the Kerberos and LDAPS (LDAP Secure) services. Talon can either use a single domain controller or multiple ones to perform these attacks, randomizing each attempt, between the domain controllers and services (LDAP or Kerberos).
 
 
 ## Installation
-Talon was developed with go.
+Talon was developed in golang.
 
 The first step as always is to clone the repo. Before you compile Talon you'll need to install the dependencies. To install them, run following commands:
 ```
@@ -144,7 +144,7 @@ root@kali:~# ./Talon -H 172.14.15.1 -Userfile ValidUsers -D STARLABS.local -P "F
 
 
 
-#### Changelog
+##### Changelog
 * Published  on 04/09/2018
 * Version 1.2 released 02/14/2019
 * Version 1.3 released 05/03/2019
