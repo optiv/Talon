@@ -2,8 +2,10 @@
 # Talon
 Talon is a tool designed to perform automated password guessing attacks while remaining undetected. Talon can enumerate a list of users to identify which users are valid, using Kerberos. Talon can also perform a password guessing attack against the Kerberos and LDAPS (LDAP Secure) services. Talon can either use a single domain controller or multiple ones to perform these attacks, randomizing each attempt, between the domain controllers and services (LDAP or Kerberos).
 
+## Usage
+Download release for your OS from [releases](https://github.com/optiv/Talon/releases)
 
-## Installation
+## Contributing
 Talon was developed in golang.
 
 The first step as always is to clone the repo. Before you compile Talon you'll need to install the dependencies. To install them, run following commands:
