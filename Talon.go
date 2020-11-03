@@ -250,7 +250,7 @@ func setup(service, host, domain, username, password string, enum bool) Authenti
 }
 
 func (l LDAP) Login() (string, string, error) {
-	printDebug("Logging into LDAP with %v", l)
+	printDebug("Logging into LDAP with %v\n", l)
 	conn, err := ldap.DialTLS("tcp", (l.Host + ":636"), &tls.Config{InsecureSkipVerify: true})
 
 	if err != nil {
@@ -287,7 +287,7 @@ func (l LDAP) Login() (string, string, error) {
 	return result, forfile, err
 }
 func (k KERB) Login() (string, string, error) {
-	printDebug("Logging into Kerberos with %v", k)
+	printDebug("Logging into Kerberos with %v\n", k)
 	cfg, err := config.NewConfigFromString("[libdefaults]\n         default_realm = ${REALM}\n      dns_lookup_realm = false\n         dns_lookup_kdc = true\n         [realms]\n          " + k.User.Domain + " = {\n          kdc =" + k.Host + ":88\n          }\n")
 	if k.Enum == true {
 		cfg.LibDefaults.PreferredPreauthTypes = []int{int(etypeID.DES3_CBC_SHA1_KD)}
@@ -295,7 +295,7 @@ func (k KERB) Login() (string, string, error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	cl := client.NewClientWithPassword(k.User.Name, k.User.Domain, k.User.Password, cfg, client.DisablePAFXFAST(true), client.AssumePreAuthentication(true))
+	cl := client.NewClientWithPassword(k.User.Name, k.User.Domain, k.User.Password, cfg, client.DisablePAFXFAST(true))
 	err = cl.Login()
 	if err != nil {
 		printDebug(err.Error() + "\n")
