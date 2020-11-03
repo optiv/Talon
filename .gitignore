@@ -1,4 +1,0 @@
-.gitignore
-.goreleaser.yml
-.DS_Store
-dist/config.yaml
