@@ -1,5 +1,14 @@
 
+
+<h1 align="center">
+<br>
+<img src=Screenshots/Talon.png>
+<br>
+</h1>
+
 # Talon
+
+
 Talon is a tool designed to perform automated password guessing attacks while remaining undetected. Talon can enumerate a list of users to identify which users are valid, using Kerberos. Talon can also perform a password guessing attack against the Kerberos and LDAPS (LDAP Secure) services. Talon can either use a single domain controller or multiple ones to perform these attacks, randomizing each attempt, between the domain controllers and services (LDAP or Kerberos).
 
 More info about the techniques can be found on the following [Blog](https://www.optiv.com/explore-optiv-insights/blog/digging-your-talons-new-take-password-guessing) 
