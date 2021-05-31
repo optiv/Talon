@@ -17,9 +17,15 @@ More info about the techniques can be found on the following [Blog](https://www.
 Download release for your OS from [releases](https://github.com/optiv/Talon/releases)
 
 ## Contributing
-Talon was developed in golang.
+Talon was developed in go.
 
-The first step as always is to clone the repo. Before you compile Talon you'll need to install the dependencies. To install them, run following commands:
+The first step as always is to clone the repo. 
+Install dependencies, and build it:
+```
+go get && go build Talon.go
+```
+### Manual Install
+Before you compile Talon you'll need to install the dependencies. To install them, run following commands:
 ```
 go get github.com/fatih/color
 go get gopkg.in/jcmturner/gokrb5.v7/client
@@ -27,7 +33,6 @@ go get gopkg.in/jcmturner/gokrb5.v7/config
 go get gopkg.in/jcmturner/gokrb5.v7/iana/etypeID
 go get gopkg.in/ldap.v2
 ```
-Then build it
 
 ```
 go build Talon.go
