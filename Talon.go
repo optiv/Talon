@@ -229,6 +229,7 @@ func main() {
 		if !strings.Contains(text, "y") {
 			log.Fatal("[*] Shutting down")
 		}
+		fmt.Print("\n")
 	}
 
 	// Normal execution logic
@@ -279,7 +280,8 @@ func main() {
 		for _, pwd := range passwords {
 			printDebug("This is the current value of counter: %f\n", counter)
 			if counter < opt.attempts {
-				fmt.Printf("\nUsing password: %s\n", pwd)
+				fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
+				fmt.Printf("Using password: %s\n", pwd)
 				domain := strings.ToUpper(opt.domain)
 				printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, pwd, hosts, services)
 				x := 0
@@ -322,6 +324,7 @@ func main() {
 				// Printing output with color because why not
 				color.Set(color.FgYellow, color.Bold)
 				fmt.Printf("\nHit timeout period - Sleeping for %v minutes...\n", opt.lockout)
+				fmt.Printf("Will resume at %s", time.Now().Add(time.Duration(opt.lockout)*time.Minute).Format("01-02-2006 15:04:05"))
 				time.Sleep(time.Duration(opt.lockout) * time.Minute)
 				color.Unset()
 				counter = 0
