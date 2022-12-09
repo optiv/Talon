@@ -285,8 +285,11 @@ func main() {
 		var counter float64
 		counter = 0
 		var username string
+		var pwd string
 		// Use previous main function but iterate through passwords and automate stuff
-		for _, pwd := range passwords {
+		//		for _, pwd := range passwords {
+		for p := 0; p < len(passwords); p++ {
+			pwd = passwords[p]
 			printDebug("This is the current value of counter: %f\n", counter)
 			if counter < opt.attempts {
 				fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
