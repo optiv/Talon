@@ -288,7 +288,7 @@ func main() {
 		var pwd string
 		// Use previous main function but iterate through passwords and automate stuff
 		//		for _, pwd := range passwords {
-		for p := 0; p < len(passwords); p++ {
+		for p := 0; p <= len(passwords); p++ {
 			pwd = passwords[p]
 			printDebug("This is the current value of counter: %f\n", counter)
 			if counter < opt.attempts {
