@@ -288,10 +288,10 @@ func main() {
 		var pwd string
 		// Use previous main function but iterate through passwords and automate stuff
 		//		for _, pwd := range passwords {
-		for p := 0; p <= len(passwords); p++ {
-			pwd = passwords[p]
+		for p := 0; p < len(passwords); p++ {
 			printDebug("This is the current value of counter: %f\n", counter)
 			if counter < opt.attempts {
+				pwd = passwords[p]
 				fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
 				fmt.Printf("Using password: %s\n", pwd)
 				domain := strings.ToUpper(opt.domain)
@@ -351,6 +351,7 @@ func main() {
 				time.Sleep(time.Duration(opt.lockout) * time.Minute)
 				color.Unset()
 				counter = 0
+				p--
 			}
 		}
 	}
