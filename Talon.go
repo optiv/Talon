@@ -46,7 +46,7 @@ type KERB struct {
 	Enum bool
 }
 
-//FlagOptions set at startup
+// FlagOptions set at startup
 type FlagOptions struct {
 	host     string
 	hostfile string
@@ -63,6 +63,7 @@ type FlagOptions struct {
 	enum     bool
 	kerb     bool
 	ldap     bool
+	lockerr  float64
 }
 
 func printDebug(format string, v ...interface{}) {
@@ -89,10 +90,11 @@ func options() *FlagOptions {
 	enum := flag.Bool("E", false, "Enumerates which users are valid")
 	kerb := flag.Bool("K", false, "Test against Kerberos only")
 	ldap := flag.Bool("L", false, "Test against LDAP only")
+	lockerr := flag.Float64("LockErr", 1, "Repetative lockout errors")
 	flag.Parse()
 	debugging = *debug
 	debugWriter = os.Stdout
-	return &FlagOptions{host: *host, domain: *domain, user: *user, userfile: *userfile, hostfile: *hostfile, pass: *pass, outFile: *outFile, sleep: *sleep, enum: *enum, ldap: *ldap, kerb: *kerb, passfile: *passfile, lockout: *lockout, attempts: *attempts}
+	return &FlagOptions{host: *host, domain: *domain, user: *user, userfile: *userfile, hostfile: *hostfile, pass: *pass, outFile: *outFile, sleep: *sleep, enum: *enum, ldap: *ldap, kerb: *kerb, passfile: *passfile, lockout: *lockout, attempts: *attempts, lockerr: *lockerr}
 }
 
 func readfile(inputFile string) []string {
@@ -135,7 +137,7 @@ func main() {
           \|__|  \|__|\|__|\|_______|\|_______|\|__| \|__|
 					          (@Tyl0us)
 
-								`)
+	Version: 3.2							`)
 
 	if opt.enum {
 		services = []string{"KERB"}
@@ -238,6 +240,7 @@ func main() {
 		domain := strings.ToUpper(opt.domain)
 		printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, password, hosts, services)
 		x := 0
+		err := 0
 		rand.Seed(time.Now().Unix())
 		lenServices := len(services) - 1
 		for _, username := range usernames {
@@ -253,13 +256,17 @@ func main() {
 			result, forfile, _ := auth.Login()
 			fmt.Println(result)
 			if strings.Contains(result, "User's Account Locked") && opt.enum != true {
-				reader := bufio.NewReader(os.Stdin)
-				fmt.Print("[*] Account lock out detected - Do you want to continue.[y/n]: ")
-				text, _ := reader.ReadString('\n')
-				if strings.Contains(text, "y") {
-					continue
+				err++
+				if err == int(opt.lockerr) {
+					reader := bufio.NewReader(os.Stdin)
+					fmt.Printf("[*] %d Consecutive account lock out(s) detected - Do you want to continue.[y/n]: ", err)
+					text, _ := reader.ReadString('\n')
+					if strings.Contains(text, "y") {
+						err = 0
+						continue
+					}
+					log.Fatal("Shutting down")
 				}
-				log.Fatal("Shutting down")
 			}
 			if opt.outFile != "" {
 				forfile = forfile + "\n"
@@ -269,6 +276,7 @@ func main() {
 				x = 0
 			} else {
 				x++
+				err = 0
 			}
 		}
 	}
@@ -276,18 +284,25 @@ func main() {
 	if opt.pass == "" && opt.passfile != "" {
 		var counter float64
 		counter = 0
+		var username string
+		var pwd string
 		// Use previous main function but iterate through passwords and automate stuff
-		for _, pwd := range passwords {
+		//		for _, pwd := range passwords {
+		for p := 0; p < len(passwords); p++ {
 			printDebug("This is the current value of counter: %f\n", counter)
 			if counter < opt.attempts {
+				pwd = passwords[p]
 				fmt.Print(time.Now().Format("01-02-2006 15:04:05: "))
 				fmt.Printf("Using password: %s\n", pwd)
 				domain := strings.ToUpper(opt.domain)
 				printDebug("Domain %v\tUsernames %v\tPasswords %v\tHosts %v\tServices %v\n", domain, usernames, pwd, hosts, services)
 				x := 0
+				err := 0
 				rand.Seed(time.Now().Unix())
 				lenServices := len(services) - 1
-				for _, username := range usernames {
+				//				for _, username := range usernames {
+				for i := 0; i < len(usernames); i++ {
+					username = usernames[i]
 					n := 0
 					if opt.hostfile != "" {
 						n = rand.Int() % (len(hosts) - 1)
@@ -301,13 +316,20 @@ func main() {
 					result, forfile, _ := auth.Login()
 					fmt.Println(result)
 					if strings.Contains(result, "User's Account Locked") && opt.enum != true {
-						reader := bufio.NewReader(os.Stdin)
-						fmt.Print("[*] Account lock out detected - Do you want to continue.[y/n]: ")
-						text, _ := reader.ReadString('\n')
-						if strings.Contains(text, "y") {
-							continue
+						err++
+						usernames[i] = usernames[len(usernames)-1]
+						usernames = usernames[:len(usernames)-1]
+						i--
+						if err == int(opt.lockerr) {
+							reader := bufio.NewReader(os.Stdin)
+							fmt.Printf("[*] %d Consecutive account lock out(s) detected - Do you want to continue.[y/n]: ", err)
+							text, _ := reader.ReadString('\n')
+							if strings.Contains(text, "y") {
+								err = 0
+								continue
+							}
+							log.Fatal("Shutting down")
 						}
-						log.Fatal("Shutting down")
 					}
 					if opt.outFile != "" {
 						forfile = forfile + "\n"
@@ -317,6 +339,7 @@ func main() {
 						x = 0
 					} else {
 						x++
+						err = 0
 					}
 				}
 				counter++
@@ -328,6 +351,7 @@ func main() {
 				time.Sleep(time.Duration(opt.lockout) * time.Minute)
 				color.Unset()
 				counter = 0
+				p--
 			}
 		}
 	}
