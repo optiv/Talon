@@ -19,19 +19,9 @@ Download release for your OS from [releases](https://github.com/optiv/Talon/rele
 ## Contributing
 Talon was developed in golang.
 
-The first step as always is to clone the repo. Before you compile Talon you'll need to install the dependencies. To install them, run following commands:
-```
-go get github.com/fatih/color
-go get gopkg.in/jcmturner/gokrb5.v7/client
-go get gopkg.in/jcmturner/gokrb5.v7/config
-go get gopkg.in/jcmturner/gokrb5.v7/iana/etypeID
-go get gopkg.in/ldap.v2
-```
-Then build it
+## Installation
 
-```
-go build Talon.go
-```
+`go install -v github.com/optiv/Talon@latest`
 
 ## Usage
 
