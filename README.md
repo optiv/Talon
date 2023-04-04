@@ -117,9 +117,9 @@ Talon utilize Kerberos and LDAP, which are both integrated into Active Directory
 [-]  172.16.144.195 STARLABS.LOCAL\ssmith:Not3vil = Failed
 ```
 
-Talon is designed to be versitale given any siutaiton as a result, if only Kerberose is available, Talon can be set to only attack against Kerberos using the `-K` flag or only LDAP using the `-L` flag.
+Talon is designed to be versatile given any situation as a result, if only Kerberos is available, Talon can be set to only attack against Kerberos using the `-K` flag or only LDAP using the `-L` flag.
 
-Talon can use both Kerberos and LDAP to read the responses as we perform a password guessing attack. Talon can detect account lockouts during an active password guessing attack by reading the response code from each password attempt. This can help prevent any unwanted account locks acorss a enterprise, helping you to remain undetected. Simply follow the prompt to quit or continue the attack.
+Talon can use both Kerberos and LDAP to read the responses as we perform a password guessing attack. Talon can detect account lockouts during an active password guessing attack by reading the response code from each password attempt. This can help prevent any unwanted account locks across an enterprise, helping you to remain undetected. Simply follow the prompt to quit or continue the attack.
 
 ```
 root@kali:~# ./Talon -Hostfile DCs -Userfile ValidUsers -D STARLABS.local -P "Password!" -sleep 2
@@ -146,7 +146,7 @@ root@kali:~# ./Talon -Hostfile DCs -Userfile ValidUsers -D STARLABS.local -P "Pa
 
 
 ### Troubleshooting
-Talon comes equip to detect if the  targeted domain controllers are activy or become unavialble. This helps ensure your getting accurate results while not wasting time. 
+Talon comes equip to detect if the  targeted domain controllers are active or become unavailable. This helps ensure your getting accurate results while not wasting time. 
 
 
 ```
@@ -169,7 +169,7 @@ root@kali:~# ./Talon -H 172.14.15.1 -Userfile ValidUsers -D STARLABS.local -P "F
 
 ### Timing Controls
 
-Talon has the ability to perform password guessing against a list of possible passwords in a file using the (`-Passfile`). As this can be VERY DANGEROUS, Talon has controls in place to pause after a certain amount of attempts (`-A`) for a specified time (`-Lockout`). <b>Please note</b> that it is important to know the password policy before using these options as queueing multiple password attempts can lock out accounts if you do not have the Password policy. 
+Talon can perform password guessing against a list of possible passwords in a file using the (`-Passfile`). As this can be VERY DANGEROUS, Talon has controls in place to pause after a certain amount of attempts (`-A`) for a specified time (`-Lockout`). <b>Please note</b> that it is important to know the password policy before using these options as queueing multiple password attempts can lock out accounts if you do not have the Password policy. 
 
 
 ```
